@@ -1,0 +1,67 @@
+version: "3.8"
+
+services:
+
+  server:
+    image: harbor.vantage6.ai/infrastructure/server:harukas
+    ports:
+      - 5000:5000
+    volumes:
+      - $PWD/containerfiles/server.yaml:/config.yaml
+      - $PWD/containerfiles/entities.yaml:/entities.yaml
+      - $PWD/containerfiles/entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    restart: unless-stopped
+
+  node1:
+    container_name: vantage6-node1-user
+    image: harbor.vantage6.ai/infrastructure/node:harukas
+    environment:
+      - DATA_VOLUME_NAME=node1-data
+      - DATABASE_URI=/containerfiles/node1.csv
+    volumes:
+      - node1-data:/mnt/data
+      - $PWD/containerfiles:/containerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node1.yaml", "--dockerized"]
+    depends_on: 
+      - server
+    restart: unless-stopped
+
+  node2:
+    container_name: vantage6-node2-user
+    image: harbor.vantage6.ai/infrastructure/node:harukas
+    environment:
+      - DATA_VOLUME_NAME=node2-data
+      - DATABASE_URI=/containerfiles/node2.csv
+    volumes:
+      - node2-data:/mnt/data
+      - $PWD/containerfiles:/containerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node2.yaml", "--dockerized"]
+    depends_on: 
+      - server
+    restart: unless-stopped
+
+  node3:
+    container_name: vantage6-node3-user
+    image: harbor.vantage6.ai/infrastructure/node:harukas
+    environment:
+      - DATA_VOLUME_NAME=node3-data
+      - DATABASE_URI=/containerfiles/node3.csv
+    volumes:
+      - node3-data:/mnt/data
+      - $PWD/containerfiles:/containerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node3.yaml", "--dockerized"]
+    depends_on: 
+      - server
+    restart: unless-stopped
+
+volumes:
+  node1-data:
+    external: True
+  node2-data:
+    external: True
+  node3-data:
+    external: True

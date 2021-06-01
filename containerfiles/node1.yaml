@@ -1,0 +1,24 @@
+application:
+  acc: {}
+  api_key: 844a7d92-1cc9-4856-bf33-0613252d5b3c
+  api_path: /api
+  databases:
+    default: /database.csv
+  dev: {}
+  encryption:
+    enabled: false
+    private_key: ''
+  environments: null
+  logging:
+    backup_count: 5
+    datefmt: '%Y-%m-%d %H:%M:%S'
+    file: demo.log
+    format: '%(asctime)s - %(name)-14s - %(levelname)-8s - %(message)s'
+    level: DEBUG
+    max_size: 1024
+    use_console: true
+  port: '5000'
+  prod: {}
+  server_url: http://host.docker.internal
+  task_dir: tasks
+  test: {}
