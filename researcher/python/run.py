@@ -33,7 +33,7 @@ task = client.post_task(
     image="harbor.vantage6.ai/algorithms/summary",
     collaboration_id=client.collaboration.list()[0]['id'],#Get the first collaboration associated with user
     input_= input_,
-    organization_ids=client.collaboration.list()[0]['organizations'][0]['id']#Get first org in the collaboration to run the algorithm on
+    organization_ids=[client.collaboration.list()[0]['organizations'][0]['id']]#Get first org in the collaboration to run the algorithm on
 )
 
 print("Wait and fetch results")
