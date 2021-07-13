@@ -1,5 +1,12 @@
 version: "3.8"
 
+x-node-common:
+  &node-common
+  image: harbor.vantage6.ai/infrastructure/node:harukas
+  depends_on: 
+    - server
+  restart: unless-stopped
+
 services:
 
   server:
@@ -7,56 +14,47 @@ services:
     ports:
       - 5000:5000
     volumes:
-      - $PWD/containerfiles/server.yaml:/config.yaml
-      - $PWD/containerfiles/entities.yaml:/entities.yaml
-      - $PWD/containerfiles/entrypoint.sh:/entrypoint.sh
+      - ./containerfiles/server.yaml:/config.yaml
+      - ./containerfiles/entities.yaml:/entities.yaml
+      - ./containerfiles/entrypoint.sh:/entrypoint.sh
     entrypoint: ["/bin/bash", "/entrypoint.sh"]
     restart: unless-stopped
 
   node1:
+    <<: *node-common
     container_name: vantage6-node1-user
-    image: harbor.vantage6.ai/infrastructure/node:harukas
     environment:
       - DATA_VOLUME_NAME=node1-data
       - DATABASE_URI=/containerfiles/node1.csv
     volumes:
-      - node1-data:/mnt/data
-      - $PWD/containerfiles:/containerfiles
+      - ./containerfiles:/containerfiles
       - /var/run/docker.sock:/var/run/docker.sock
+      - node1-data:/mnt/data
     entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node1.yaml", "--dockerized"]
-    depends_on: 
-      - server
-    restart: unless-stopped
 
   node2:
+    <<: *node-common
     container_name: vantage6-node2-user
-    image: harbor.vantage6.ai/infrastructure/node:harukas
     environment:
       - DATA_VOLUME_NAME=node2-data
       - DATABASE_URI=/containerfiles/node2.csv
     volumes:
-      - node2-data:/mnt/data
-      - $PWD/containerfiles:/containerfiles
+      - ./containerfiles:/containerfiles
       - /var/run/docker.sock:/var/run/docker.sock
+      - node2-data:/mnt/data
     entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node2.yaml", "--dockerized"]
-    depends_on: 
-      - server
-    restart: unless-stopped
 
   node3:
+    <<: *node-common
     container_name: vantage6-node3-user
-    image: harbor.vantage6.ai/infrastructure/node:harukas
     environment:
       - DATA_VOLUME_NAME=node3-data
       - DATABASE_URI=/containerfiles/node3.csv
     volumes:
-      - node3-data:/mnt/data
-      - $PWD/containerfiles:/containerfiles
+      - ./containerfiles:/containerfiles
       - /var/run/docker.sock:/var/run/docker.sock
+      - node3-data:/mnt/data
     entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node3.yaml", "--dockerized"]
-    depends_on: 
-      - server
-    restart: unless-stopped
 
 volumes:
   node1-data:
