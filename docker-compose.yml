@@ -30,7 +30,8 @@ services:
       - ./containerfiles:/containerfiles
       - /var/run/docker.sock:/var/run/docker.sock
       - node1-data:/mnt/data
-    entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node1.yaml", "--dockerized"]
+      - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
+    entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node1"]
 
   node2:
     <<: *node-common
@@ -42,7 +43,8 @@ services:
       - ./containerfiles:/containerfiles
       - /var/run/docker.sock:/var/run/docker.sock
       - node2-data:/mnt/data
-    entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node2.yaml", "--dockerized"]
+      - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
+      entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node2"]
 
   node3:
     <<: *node-common
@@ -54,7 +56,8 @@ services:
       - ./containerfiles:/containerfiles
       - /var/run/docker.sock:/var/run/docker.sock
       - node3-data:/mnt/data
-    entrypoint: ["vnode-local", "start", "-c", "/containerfiles/node3.yaml", "--dockerized"]
+      - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
+      entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node3"]
 
 volumes:
   node1-data:
