@@ -44,7 +44,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - node2-data:/mnt/data
       - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
-      entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node2"]
+    entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node2"]
 
   node3:
     <<: *node-common
@@ -57,7 +57,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - node3-data:/mnt/data
       - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
-      entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node3"]
+    entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node3"]
 
 volumes:
   node1-data:
