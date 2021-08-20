@@ -1,0 +1,51 @@
+collaborations:
+- encrypted: false
+  name: v6-demo
+  participants:
+  - api-key: 844a7d92-1cc9-4856-bf33-0613252d5b3c
+    name: node1
+  - api-key: 57143784-19ef-456b-94c9-ba68c8cb079b
+    name: node2
+  - api-key: ef800b05-8a53-4316-95ed-2ba71c7ea307
+    name: node3
+nodes: []
+organizations:
+- address1: node1street 42
+  address2: ''
+  country: Netherlands
+  domain: node1.nl
+  name: node1
+  public_key: ''
+  users:
+  - email: user@node1.nl
+    firstname: Firstname
+    lastname: Lastname
+    password: node1-password
+    username: node1-user
+  zipcode: 1234AB
+- address1: node2street 42
+  address2: ''
+  country: Netherlands
+  domain: node2.nl
+  name: node2
+  public_key: ''
+  users:
+  - email: user@node2.nl
+    firstname: Firstname
+    lastname: Lastname
+    password: node2-password
+    username: node2-user
+  zipcode: 1234AB
+- address1: node3street 42
+  address2: ''
+  country: Netherlands
+  domain: node3.nl
+  name: node3
+  public_key: ''
+  users:
+  - email: user@node3.nl
+    firstname: Firstname
+    lastname: Lastname
+    password: node3-password
+    username: node3-user
+  zipcode: 1234AB

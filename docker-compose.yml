@@ -1,0 +1,65 @@
+version: "3.8"
+
+x-node-common:
+  &node-common
+  image: harbor.vantage6.ai/infrastructure/node:harukas
+  depends_on: 
+    - server
+  restart: unless-stopped
+
+services:
+
+  server:
+    image: harbor.vantage6.ai/infrastructure/server:harukas
+    ports:
+      - 5000:5000
+    volumes:
+      - ./containerfiles/server.yaml:/config.yaml
+      - ./containerfiles/entities.yaml:/entities.yaml
+      - ./containerfiles/entrypoint.sh:/entrypoint.sh
+    entrypoint: ["/bin/bash", "/entrypoint.sh"]
+    restart: unless-stopped
+
+  node1:
+    <<: *node-common
+    container_name: vantage6-node1-user
+    environment:
+      - DATA_VOLUME_NAME=v6-demo_node1-data
+      - DATABASE_URI=/containerfiles/node1.csv
+    volumes:
+      - ./containerfiles:/containerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+      - node1-data:/mnt/data
+      - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
+    entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node1"]
+
+  node2:
+    <<: *node-common
+    container_name: vantage6-node2-user
+    environment:
+      - DATA_VOLUME_NAME=v6-demo_node2-data
+      - DATABASE_URI=/containerfiles/node2.csv
+    volumes:
+      - ./containerfiles:/containerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+      - node2-data:/mnt/data
+      - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
+    entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node2"]
+
+  node3:
+    <<: *node-common
+    container_name: vantage6-node3-user
+    environment:
+      - DATA_VOLUME_NAME=v6-demo_node3-data
+      - DATABASE_URI=/containerfiles/node3.csv
+    volumes:
+      - ./containerfiles:/containerfiles
+      - /var/run/docker.sock:/var/run/docker.sock
+      - node3-data:/mnt/data
+      - ./containerfiles/docker_manager.py:/vantage6/vantage6-node/vantage6/node/docker_manager.py
+    entrypoint: ["/bin/bash", "/containerfiles/node_entrypoint.sh", "node3"]
+
+volumes:
+  node1-data:
+  node2-data:
+  node3-data:
