@@ -3,7 +3,7 @@ application:
   api_key: 57143784-19ef-456b-94c9-ba68c8cb079b
   api_path: /api
   databases:
-    default: /database.csv
+    default: http://graphdb:7200/repositories/data
   dev: {}
   encryption:
     enabled: false
