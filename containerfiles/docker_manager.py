@@ -8,22 +8,20 @@ and retreive results from finisched containers
 TODO the task folder is also created by this class. This folder needs
 to be cleaned at some point.
 """
-import sys
 import os
 import time
 import logging
 import docker
 import pathlib
-import tarfile
 import re
 
 from typing import NamedTuple
-from pathlib import Path
 
-from . import globals as cs
-
+from vantage6.common.docker_addons import pull_if_newer
 from vantage6.common.globals import APPNAME
 from vantage6.node.util import logger_name
+
+
 
 class Result(NamedTuple):
     """ Data class to store the result of the docker image."""
@@ -31,6 +29,7 @@ class Result(NamedTuple):
     logs: str
     data: str
     status_code: int
+
 
 class DockerManager(object):
     """ Wrapper for the docker module, to be used specifically for vantage6.
@@ -41,13 +40,10 @@ class DockerManager(object):
         the same time. Results (async) can be retrieved through
         `get_result()` which returns the first available result.
     """
-
     log = logging.getLogger(logger_name(__name__))
 
-    # TODO authenticate to docker repository... from the config-file
-
     def __init__(self, allowed_images, tasks_dir, isolated_network_name: str,
-        node_name: str, data_volume_name: str) -> None:
+                 node_name: str, data_volume_name: str) -> None:
         """ Initialization of DockerManager creates docker connection and
             sets some default values.
 
@@ -58,11 +54,13 @@ class DockerManager(object):
         self.log.debug("Initializing DockerManager")
         self.data_volume_name = data_volume_name
         self.database_uri = None
+        self.database_is_file = False
         self.__tasks_dir = tasks_dir
+        self.algorithm_env = {}
 
         # Connect to docker daemon
-        # self.client = docker.DockerClient(base_url=docker_socket_path)
-        self.client = docker.from_env()
+        # self.docker = docker.DockerClient(base_url=docker_socket_path)
+        self.docker = docker.from_env()
 
         # keep track of the running containers
         self.active_tasks = []
@@ -123,7 +121,7 @@ class DockerManager(object):
         """
         name = self.network_name
 
-        networks = self.client.networks.list(names=[name])
+        networks = self.docker.networks.list(names=[name])
         if networks:
             self.log.debug(f"Network {name} already exists. Deleting it.")
             for network in networks:
@@ -131,18 +129,21 @@ class DockerManager(object):
         else:
             self.log.debug("No network found...")
 
-        try:
-            network = self.client.networks.get(name)
-            self.log.debug(f"Network {name} already exists.")
+        self.log.debug(f"Creating isolated docker-network {name}!")
 
-        except:
-            self.log.debug(f"Creating isolated docker-network {name}")
-            network = self.client.networks.create(
-                name,
-                driver="bridge",
-                internal=False,
-                scope="local"
+        internal_ = self.running_in_docker()
+        if not internal_:
+            self.log.warn(
+                "Algorithms have internet connection! "
+                "This happens because you use 'vnode-local'!"
             )
+
+        network = self.docker.networks.create(
+            name,
+            driver="bridge",
+            internal=internal_,
+            scope="local"
+        )
 
         return network
 
@@ -164,12 +165,12 @@ class DockerManager(object):
             :param run_id: integer representing the run_id
         """
         try:
-            self.client.volumes.get(volume_name)
+            self.docker.volumes.get(volume_name)
             self.log.debug(f"Volume {volume_name} already exists.")
 
         except docker.errors.NotFound:
             self.log.debug(f"Creating volume {volume_name}")
-            self.client.volumes.create(volume_name)
+            self.docker.volumes.create(volume_name)
 
     def is_docker_image_allowed(self, docker_image_name: str):
         """ Checks the docker image name.
@@ -197,7 +198,7 @@ class DockerManager(object):
 
     def is_running(self, result_id):
         """Return True iff a container is already running for <result_id>."""
-        container = self.client.containers.list(filters={
+        container = self.docker.containers.list(filters={
             "label": [
                 f"{APPNAME}-type=algorithm",
                 f"node={self.node_name}",
@@ -211,9 +212,11 @@ class DockerManager(object):
         """Pull the latest image."""
         try:
             self.log.info(f"Retrieving latest image: '{image}'")
-            self.client.images.pull(image)
+            # self.docker.images.pull(image)
+            pull_if_newer(self.docker, image, self.log)
 
         except Exception as e:
+            self.log.debug('Failed to pull image')
             self.log.error(e)
 
     def set_database_uri(self, database_uri):
@@ -257,7 +260,6 @@ class DockerManager(object):
         #   is terrible when working from windows (as you have to convert
         #   from windows to unix several times...).
 
-
         # If we're running in docker __tasks_dir will point to a location on
         # the data volume.
         # Alternatively, if we're not running in docker it should point to the
@@ -294,7 +296,8 @@ class DockerManager(object):
         }
 
         if self.running_in_docker():
-            volumes[self.data_volume_name] = {"bind": data_folder, "mode": "rw"}
+            volumes[self.data_volume_name] = \
+                {"bind": data_folder, "mode": "rw"}
 
         else:
             volumes[self.__tasks_dir] = {"bind": data_folder, "mode": "rw"}
@@ -302,7 +305,7 @@ class DockerManager(object):
         try:
             proxy_host = os.environ['PROXY_SERVER_HOST']
 
-        except Exception as e:
+        except Exception:
             print('-' * 80)
             print(os.environ)
             print('-' * 80)
@@ -314,24 +317,34 @@ class DockerManager(object):
         # FIXME: we should only prepend data_folder if database_uri is a
         #   filename
         environment_variables = {
-            "INPUT_FILE": data_folder + "/" + task_folder_name + "/" + "input",
-            "OUTPUT_FILE": data_folder + "/" + task_folder_name + "/" + "output",
-            "TOKEN_FILE": data_folder + "/" + task_folder_name + "/" + "token",
+            "INPUT_FILE": f"{data_folder}/{task_folder_name}/input",
+            "OUTPUT_FILE": f"{data_folder}/{task_folder_name}/output",
+            "TOKEN_FILE": f"{data_folder}/{task_folder_name}/token",
             "TEMPORARY_FOLDER": tmp_folder,
-            "DATABASE_URI": data_folder + "/" + self.database_uri,
             "HOST": f"http://{proxy_host}",
             "PORT": os.environ.get("PROXY_SERVER_PORT", 8080),
             "API_PATH": "",
         }
-
-
+        if self.database_is_file:
+            environment_variables["DATABASE_URI"] = \
+                f"{data_folder}/{self.database_uri}"
+        else:
+             environment_variables["DATABASE_URI"] = self.database_uri
         self.log.debug(f"environment: {environment_variables}")
+
+        # Load additional environment variables
+        if self.algorithm_env:
+            environment_variables = \
+                {**environment_variables, **self.algorithm_env}
+            self.log.info('Custom environment variables are loaded!')
+            self.log.debug(f"custom environment: {self.algorithm_env}")
+
         self.log.debug(f"volumes: {volumes}")
 
         # attempt to run the image
         try:
             self.log.info(f"Run docker image={image}")
-            container = self.client.containers.run(
+            container = self.docker.containers.run(
                 image,
                 detach=True,
                 environment=environment_variables,
@@ -372,8 +385,8 @@ class DockerManager(object):
         while not finished_tasks:
             self.__refresh_container_statuses()
 
-            finished_tasks = [t for t in self.active_tasks \
-                if t['container'].status == 'exited']
+            finished_tasks = [t for t in self.active_tasks
+                              if t['container'].status == 'exited']
 
             time.sleep(1)
 
@@ -405,7 +418,6 @@ class DockerManager(object):
                 self.log.error(f"Failed to remove container {container.name}")
                 self.log.debug(e)
 
-
         self.active_tasks.remove(finished_task)
 
         # retrieve results from file
@@ -427,7 +439,7 @@ class DockerManager(object):
 
         for registry in registies:
             try:
-                self.client.login(
+                self.docker.login(
                     username=registry.get("username"),
                     password=registry.get("password"),
                     registry=registry.get("registry")
