@@ -2,7 +2,7 @@ version: "3.8"
 
 x-node-common:
   &node-common
-  image: harbor.vantage6.ai/infrastructure/node:harukas
+  image: harbor.vantage6.ai/infrastructure/node:2.1.2
   depends_on: 
     - server
   restart: unless-stopped
@@ -10,7 +10,7 @@ x-node-common:
 services:
 
   server:
-    image: harbor.vantage6.ai/infrastructure/server:harukas
+    image: harbor.vantage6.ai/infrastructure/server:2.1.2
     ports:
       - 5000:5000
     volumes:
