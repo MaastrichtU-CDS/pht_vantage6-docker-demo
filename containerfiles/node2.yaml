@@ -19,6 +19,6 @@ application:
     use_console: true
   port: '5000'
   prod: {}
-  server_url: http://host.docker.internal
+  server_url: http://server
   task_dir: tasks
   test: {}
