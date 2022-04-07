@@ -8,6 +8,11 @@ A video of this repository can be found at [https://vimeo.com/459005703](https:/
 The infrastructure can simply be started by running `docker compose up -d`. The infrastructure can
 then be taken down by running `docker compose down`
 
+**Pro tip**: download the analysis containers before running the researcher algorithms. This will speed up the execution the first time. You can run the following command:
+```
+docker pull jaspersnel/vtg.tpl jaspersnel/v6-average-py
+```
+
 ### For researchers to run their algorithm in Python
 1. Go to the folder [./researcher/python](./researcher/python)
 2. Execute `sh run.sh`
