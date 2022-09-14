@@ -3,7 +3,7 @@ application:
   api_key: ef800b05-8a53-4316-95ed-2ba71c7ea307
   api_path: /api
   databases:
-    default: /database.csv
+    default: /containerfiles/node3.csv
   dev: {}
   encryption:
     enabled: false
